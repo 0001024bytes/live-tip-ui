@@ -6,7 +6,6 @@ import { useParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "./services/api";
-import Confetti from "react-confetti"; 
 
 function Donation() {
   const [displayName, setDisplayName] = useState("");
