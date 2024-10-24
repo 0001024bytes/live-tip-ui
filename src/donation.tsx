@@ -6,8 +6,11 @@ import { useParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "./services/api";
+import Confetti from "react-confetti"
 
 function Donation() {
+  const [txid, setTxid] = useState("");
+  const [paid, setPaid] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [lightningAddress, setLightningAddress] = useState("");
   const [picture, setPicture] = useState("");
@@ -17,7 +20,7 @@ function Donation() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [address, setAddress] = useState("")
+  const [address, setAddress] = useState("");
   const { nostrID } = useParams();
 
   async function fetchProfile() {
@@ -56,10 +59,29 @@ function Donation() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (txid) {
+      const interval = setInterval(() => {
+        api.getPaymentPaid(txid).then((r) => {
+          const data = r.data;
+          setPaid(data.paid);
+          if (data.paid) {
+            clearInterval(interval); 
+          }
+        });
+      }, 10000);
+
+      return () => clearInterval(interval); 
+    }
+  }, [txid]);
+
   const isFormComplete = () => amount && description;
 
   return (
-    <div className=" font-sans h-screen bg-green-100">
+    <div className="font-sans h-screen bg-green-100">
+      {
+        paid && <Confetti />
+      }
       <div className="max-w-4xl mx-auto overflow-hidden h-full bg-white">
         <div className="h-full overflow-y-auto">
           <div className="flex flex-col">
@@ -168,11 +190,13 @@ function Donation() {
                       String(nostrID), 
                       Number(amount.replace("$", "")), 
                       paymentMethod, 
-                      description
+                      description,
+                      lightningAddress
                     ).then((r) => {
                       const data = r.data;
-                      setAddress(data?.address)
-                    })
+                      setAddress(data?.address);
+                      setTxid(data?.txid);
+                    });
                   }}
                 >
                   <img
@@ -198,19 +222,25 @@ function Donation() {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex justify-start">
-                  {lightningAddress && (
-                    <QRCodeCanvas
-                      value={address}
-                      size={180}
-                      level={"H"}
-                      includeMargin={true}
-                    />
-                  )}
+                {address && (
+                  <a className="flex justify-start" href={address}>
+                      <QRCodeCanvas
+                        value={address}
+                        size={256}
+                        bgColor={"#ffffff"}
+                        fgColor={"#000000"}
+                        level={"H"}
+                        includeMargin={false}
+                      />
+                  </a>
+                )}
+                <div className=" w-full">
+                  <p className=" text-primary/50">Copy and paste this address into your wallet:</p>
+                  <input className=" w-full disabled:text-primary/50" value={address} disabled={true}/>
                 </div>
+                {paid && <p className="text-green-500 text-lg font-semibold">Thank you for the donation! 🎉</p>}
               </DialogContent>
             </Dialog>
-
           </div>
         </div>
       </div>
