@@ -3,16 +3,19 @@ import { useState, useEffect } from "react";
 import { SimplePool } from "nostr-tools/pool";
 import { BadgeCheck } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "./services/api";
 import Confetti from "react-confetti"
+import PaidLoading from "./assets/paid.json"
+import Lottie from "lottie-react";
 
 function Donation() {
   const [txid, setTxid] = useState("");
   const [paid, setPaid] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [lightningAddress, setLightningAddress] = useState("");
+  const [commentAllowed, setcommentAllowed] = useState(500)
   const [picture, setPicture] = useState("");
   const [banner, setBanner] = useState("");
   const [about, setAbout] = useState("");
@@ -21,6 +24,9 @@ function Donation() {
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [address, setAddress] = useState("");
+  const [maxValue, setMaxValue] = useState(0);
+  const [minValue, setMinValue] = useState(0);
+
   const { nostrID } = useParams();
 
   async function fetchProfile() {
@@ -58,6 +64,17 @@ function Donation() {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (lightningAddress) {
+      api.getInfo(lightningAddress).then((r) => {
+        const data = r.data
+        setMaxValue(data?.max_value);
+        setMinValue(data?.min_value);
+        setcommentAllowed(data?.comment_allowed);
+      })
+    }
+  }, [lightningAddress])
 
   useEffect(() => {
     if (txid) {
@@ -130,7 +147,7 @@ function Donation() {
             </p>
 
             <div className="flex space-x-2 mb-4">
-              {["$1", "$10", "$15"].map((presetAmount) => (
+              {["1", "10", "15"].map((presetAmount) => (
                 <button
                   key={presetAmount}
                   onClick={() => setAmount(presetAmount)}
@@ -138,15 +155,17 @@ function Donation() {
                     amount === presetAmount ? "bg-green-300" : ""
                   }`}
                 >
-                  {presetAmount}
+                  ${presetAmount}
                 </button>
               ))}
               <input
-                type="text"
+                type="number"
                 className="w-20 md:w-28 px-2 py-2 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="$0.00"
-                value={amount}
+                value={Number(amount)}
                 onChange={(e) => setAmount(e.target.value)}
+                max={maxValue}
+                min={minValue}
               />
             </div>
 
@@ -155,6 +174,7 @@ function Donation() {
               placeholder="Say something here..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              maxLength={commentAllowed}
             ></textarea>
 
             {isFormComplete() && (
@@ -181,7 +201,7 @@ function Donation() {
               </div>
             )}
             <Dialog>
-              <DialogTrigger className="w-full">
+              <DialogTrigger className="w-full" disabled={!lightningAddress || !isFormComplete() || !paymentMethod}>
                 <button
                   disabled={!lightningAddress || !isFormComplete() || !paymentMethod}
                   className="w-full h-12 md:h-14 bg-green-500 text-white disabled:bg-slate-400 mt-4 py-2 md:py-3 rounded-lg flex justify-center items-center hover:bg-green-600 transition duration-200"
@@ -209,20 +229,34 @@ function Donation() {
               </DialogTrigger>
               <DialogContent className="flex flex-col gap-5 p-6 md:p-8">
                 <DialogHeader>
-                  <DialogTitle className="text-lg md:text-xl flex flex-row gap-2 font-semibold text-start">
-                    <img
-                      src="https://static-00.iconduck.com/assets.00/money-with-wings-emoji-1024x860-325l9x4i.png"
-                      alt="Donate Icon"
-                      className="w-5 h-5 mr-2 md:w-6 md:h-6"
-                    />
-                    Make your donation of {amount}
-                  </DialogTitle>
-                  <DialogDescription className="text-sm md:text-base text-gray-500 text-start">
-                    Scan the code above with your payment app to donate via {paymentMethod}.
-                  </DialogDescription>
+                  {
+                    !paid ? (
+                      <>
+                        <DialogTitle className="text-lg md:text-xl flex flex-row gap-2 font-semibold text-start">
+                          <img
+                            src="https://static-00.iconduck.com/assets.00/money-with-wings-emoji-1024x860-325l9x4i.png"
+                            alt="Donate Icon"
+                            className="w-5 h-5 mr-2 md:w-6 md:h-6"
+                          />
+                          Make your donation of $ {amount}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm md:text-base text-gray-500 text-start">
+                          Scan the code above with your payment app to donate via {paymentMethod}.
+                        </DialogDescription>   
+                      </>
+                    ) : (
+                      <>
+                        <DialogTitle className="text-lg md:text-xl flex flex-row gap-2 font-semibold text-start">
+                          Thank you for the donation! 🎉
+                        </DialogTitle>
+                        <DialogDescription className="text-sm md:text-base text-gray-500 text-start">
+                          Your donation has been successfully sent!
+                        </DialogDescription>   
+                      </>
+                    )
+                  }
                 </DialogHeader>
-
-                {address && (
+                {address && !paid && (
                   <a className="flex justify-start" href={address}>
                       <QRCodeCanvas
                         value={address}
@@ -234,11 +268,30 @@ function Donation() {
                       />
                   </a>
                 )}
-                <div className=" w-full">
-                  <p className=" text-primary/50">Copy and paste this address into your wallet:</p>
-                  <input className=" w-full disabled:text-primary/50" value={address} disabled={true}/>
-                </div>
-                {paid && <p className="text-green-500 text-lg font-semibold">Thank you for the donation! 🎉</p>}
+                {
+                  paid && (
+                    <div className="flex justify-center">
+                      <Lottie 
+                          loop={false} 
+                          animationData={PaidLoading} style={{ height: 350, width: 250 }} 
+                      />
+                    </div>
+                  )
+                }
+                {
+                  !paid && (
+                    <div className=" w-full flex flex-col gap-2">
+                      <input className=" w-full disabled:text-primary/50" value={address.split(":")[1]} disabled={true}/>
+                    </div>
+                  )
+                }
+                {
+                  paid && (
+                    <DialogClose className=" bg-green-600  text-white h-14 rounded">
+                      Close
+                    </DialogClose>
+                  )
+                }
               </DialogContent>
             </Dialog>
           </div>

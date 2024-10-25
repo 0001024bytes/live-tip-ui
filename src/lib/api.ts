@@ -27,6 +27,10 @@ export default class API {
       }
   }
 
+  getInfo(lightning_address: string) {
+    return this.call("GET", `/api/v1/getinfo?lightning_address=${lightning_address}`)
+  }
+
   createAddress(id: string, amount: number, payment_type: string, message: string, lightning_address: string) {
     return this.call("POST", `/api/v1/address/${id}?amount=${amount}&payment_type=${payment_type}&message=${message}&lightning_address=${lightning_address}`)
   }
