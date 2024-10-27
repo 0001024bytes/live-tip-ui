@@ -21,7 +21,7 @@ function Donation() {
   const [picture, setPicture] = useState("");
   const [banner, setBanner] = useState("");
   const [about, setAbout] = useState("");
-  const [verified, setVerified] = useState("");
+  const [nip05, setNip05] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -57,7 +57,7 @@ function Donation() {
           setAbout(content?.about);
           setPicture(content?.picture);
           setBanner(content?.banner);
-          setVerified(content?.nip05valid);
+          setNip05(content?.nip05valid || content?.nip05);
           setLightningAddress(content?.lud16);
           console.log("got event:", content);
         },
@@ -147,16 +147,16 @@ function Donation() {
                 <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-white" />
               )}
 
-              <div className="flex flex-row gap-3 items-center mt-2">
+              <div className="flex w-full justify-center flex-row gap-3 items-center mt-2">
                 <h2 className="text-xl md:text-2xl font-semibold">
                   {displayName}
                 </h2>
-                {verified && (
-                  <BadgeCheck className="text-blue-500 rounded-full" size={24} />
+                {nip05 && (
+                  <BadgeCheck className="bg-white text-green-400 rounded-full" size={24} />
                 )}
               </div>
               <p className="mt-4 max-w-3xl text-sm md:text-base text-gray-700 text-center px-4 md:px-8">
-                {about}
+                {about || "No biography"}
               </p>
               <button
               onClick={handleShareClick}

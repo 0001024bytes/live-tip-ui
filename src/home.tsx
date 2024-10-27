@@ -26,7 +26,7 @@ function LandingPage() {
   };
 
   return (
-    <div className="font-sans h-screen bg-green-100 flex flex-col items-center py-10 overflow-auto">
+    <div className="font-sans h-screen bg-gray-50 flex flex-col items-center py-10 overflow-auto">
       <div className="bg-white p-8 rounded shadow-md mt-20 max-w-2xl w-full text-center">
         <h1 className="text-3xl font-bold mb-6 text-green-600">Find Your Nostr Profile</h1>
         <p className="text-gray-600 mb-4">Enter your Nostr ID below to access your donation page.</p>
