@@ -18,10 +18,10 @@ function LandingPage() {
   };
 
   const scrollToFAQ = () => {
-    document.getElementById("faq").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const toggleAccordion = (index) => {
+  const toggleAccordion = (index: any) => {
     setOpenAccordion(openAccordion === index ? null : index);
   };
 
