@@ -1,14 +1,16 @@
 import * as nip19 from "nostr-tools/nip19";
 import { useState, useEffect } from "react";
 import { SimplePool } from "nostr-tools/pool";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Share2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "./services/api";
 import Confetti from "react-confetti"
 import PaidLoading from "./assets/paid.json"
+import LoadingAddress from "./assets/loadingAddress.json"
 import Lottie from "lottie-react";
+import { motion } from "framer-motion";
 
 function Donation() {
   const [txid, setTxid] = useState("");
@@ -23,10 +25,12 @@ function Donation() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [loadingAddress, setLoadingAddress] = useState(true);
   const [address, setAddress] = useState("");
   const [maxValue, setMaxValue] = useState(0);
   const [minValue, setMinValue] = useState(0);
-
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [shareText, setShareText] = useState("Share");
   const { nostrID } = useParams();
 
   async function fetchProfile() {
@@ -101,12 +105,24 @@ function Donation() {
 
   const isFormComplete = () => amount && description;
 
+  const handleShareClick = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setShareText("Copied");
+    setTimeout(() => setShareText("Share"), 1000);
+  };
+
   return (
-    <div className="font-sans h-screen bg-green-100">
+    <motion.div
+      className="font-sans h-screen bg-gray-50"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+    >
       {
         paid && <Confetti />
       }
-      <div className="max-w-4xl mx-auto overflow-hidden h-full bg-white">
+      <div className="max-w-4xl mx-auto overflow-hidden h-full bg-white shadow-lg">
         <div className="h-full overflow-y-auto">
           <div className="flex flex-col">
             <div className="w-full flex justify-center overflow-hidden">
@@ -125,10 +141,10 @@ function Donation() {
                 <img
                   src={picture}
                   alt="Profile Picture"
-                  className="w-24 h-24 md:w-36 md:h-36 object-cover rounded-full border-4 border-white shadow-lg"
+                  className="w-24 h-24 md:w-36 md:h-36 object-cover rounded-full border-4 border-white"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-white shadow-lg" />
+                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-white" />
               )}
 
               <div className="flex flex-row gap-3 items-center mt-2">
@@ -139,9 +155,16 @@ function Donation() {
                   <BadgeCheck className="text-blue-500 rounded-full" size={24} />
                 )}
               </div>
-              <p className="mt-4 text-sm md:text-base text-gray-700 text-center px-4 md:px-8">
+              <p className="mt-4 max-w-3xl text-sm md:text-base text-gray-700 text-center px-4 md:px-8">
                 {about}
               </p>
+              <button
+              onClick={handleShareClick}
+              className="flex items-center mt-4 bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition duration-200"
+            >
+              <Share2 className="mr-2" size={18} />
+              {shareText}
+            </button>
             </div>
           </div>
 
@@ -159,7 +182,7 @@ function Donation() {
                   key={presetAmount}
                   onClick={() => setAmount(presetAmount)}
                   className={`bg-green-100 text-green-600 px-4 py-2 md:px-6 md:py-3 rounded-full hover:bg-green-200 transition duration-200 ${
-                    amount === presetAmount ? "bg-green-300" : ""
+                    amount === presetAmount ? "bg-green-500 text-white" : ""
                   }`}
                 >
                   ${presetAmount}
@@ -183,7 +206,9 @@ function Donation() {
               onChange={(e) => setDescription(e.target.value)}
               maxLength={commentAllowed}
             ></textarea>
-
+            <div className=" flex justify-end">
+              <p className=" text-sm text-gray-500">{description.length} / {commentAllowed}</p>
+            </div>
             {isFormComplete() && (
               <div className="mt-4">
                 <h4 className="text-base font-semibold">Payment Method</h4>
@@ -207,12 +232,13 @@ function Donation() {
                 </div>
               </div>
             )}
-            <Dialog>
+            <Dialog open={dialogOpen} onOpenChange={() => setDialogOpen(!dialogOpen)}>
               <DialogTrigger className="w-full" disabled={!lightningAddress || !isFormComplete() || !paymentMethod}>
                 <button
                   disabled={!lightningAddress || !isFormComplete() || !paymentMethod}
                   className="w-full h-12 md:h-14 bg-green-500 text-white disabled:bg-slate-400 mt-4 py-2 md:py-3 rounded-lg flex justify-center items-center hover:bg-green-600 transition duration-200"
                   onClick={() => {
+                    setLoadingAddress(true)
                     api.createAddress(
                       String(nostrID), 
                       Number(amount.replace("$", "")), 
@@ -223,6 +249,8 @@ function Donation() {
                       const data = r.data;
                       setAddress(data?.address);
                       setTxid(data?.txid);
+                    }).finally(() => {
+                      setLoadingAddress(false)
                     });
                   }}
                 >
@@ -263,6 +291,17 @@ function Donation() {
                     )
                   }
                 </DialogHeader>
+                {
+                  loadingAddress && (
+                    <div className="flex justify-center flex-col w-full items-center">
+                      <Lottie 
+                          loop={true} 
+                          animationData={LoadingAddress} style={{ height: 350, width: 250 }} 
+                      />
+                      <p>Generating your payment address...</p>
+                    </div>
+                  )
+                }
                 {address && !paid && (
                   <a className="flex justify-start" href={address}>
                       <QRCodeCanvas
@@ -277,7 +316,7 @@ function Donation() {
                 )}
                 {
                   paid && (
-                    <div className="flex justify-center">
+                    <div className="flex justify-start">
                       <Lottie 
                           loop={false} 
                           animationData={PaidLoading} style={{ height: 350, width: 250 }} 
@@ -304,7 +343,7 @@ function Donation() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
