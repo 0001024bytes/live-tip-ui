@@ -61,6 +61,13 @@ function Donation() {
     );
   }
 
+  function handleAmountChange(e: any) {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setAmount(value);
+    }
+  }
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -163,7 +170,7 @@ function Donation() {
                 className="w-20 md:w-28 px-2 py-2 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="$0.00"
                 value={Number(amount)}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
                 max={maxValue}
                 min={minValue}
               />
@@ -281,7 +288,7 @@ function Donation() {
                 {
                   !paid && (
                     <div className=" w-full flex flex-col gap-2">
-                      <input className=" w-full disabled:text-primary/50" value={address.split(":")[1]} disabled={true}/>
+                      <input className=" w-full disabled:text-primary/50" value={address} disabled={true}/>
                     </div>
                   )
                 }
