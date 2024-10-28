@@ -101,13 +101,20 @@ function Donation() {
     }
   }, [txid]);
 
-  const isFormComplete = () => amount && description;
+  const isFormComplete = () => lightningAddress && amount && description;
 
   const handleShareClick = () => {
     navigator.clipboard.writeText(window.location.href);
     setShareText("Copied");
     setTimeout(() => setShareText("Share"), 1000);
   };
+
+  if (!lightningAddress) {
+    return (
+      <div className="max-w-4xl mx-auto overflow-hidden h-full bg-white shadow-lg">
+      </div>
+    )
+  }
 
   return (
     <motion.div
