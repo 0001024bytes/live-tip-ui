@@ -21,7 +21,6 @@ function Donation() {
   const [picture, setPicture] = useState("");
   const [banner, setBanner] = useState("");
   const [about, setAbout] = useState("");
-  const [nip05, setNip05] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -57,7 +56,6 @@ function Donation() {
           setAbout(content?.about);
           setPicture(content?.picture);
           setBanner(content?.banner);
-          setNip05(content?.nip05valid || content?.nip05);
           setLightningAddress(content?.lud16);
           console.log("got event:", content);
         },
