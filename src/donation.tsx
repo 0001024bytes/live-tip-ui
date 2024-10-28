@@ -1,7 +1,7 @@
 import * as nip19 from "nostr-tools/nip19";
 import { useState, useEffect } from "react";
 import { SimplePool } from "nostr-tools/pool";
-import { BadgeCheck, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/dialog";
 import { QRCodeCanvas } from "qrcode.react";
@@ -53,7 +53,7 @@ function Donation() {
       {
         onevent(event) {
           const content = JSON.parse(event.content);
-          setDisplayName(content?.display_name);
+          setDisplayName(content?.display_name || content?.name);
           setAbout(content?.about);
           setPicture(content?.picture);
           setBanner(content?.banner);
@@ -151,9 +151,6 @@ function Donation() {
                 <h2 className="text-xl md:text-2xl font-semibold">
                   {displayName}
                 </h2>
-                {nip05 && (
-                  <BadgeCheck className="bg-white text-green-400 rounded-full" size={24} />
-                )}
               </div>
               <p className="mt-4 max-w-3xl text-sm md:text-base text-gray-700 text-center px-4 md:px-8">
                 {about || "No biography"}
